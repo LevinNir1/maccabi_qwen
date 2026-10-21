@@ -1,0 +1,6 @@
+.venv
+runs
+data/visits.csv
+data/physician_annotations.csv
+**/__pycache__
+*.docx

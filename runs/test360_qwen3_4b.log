@@ -1,0 +1,128 @@
+Traceback (most recent call last):
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 540, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/urllib3/connection.py", line 638, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/http/client.py", line 1450, in getresponse
+    response.begin()
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/http/client.py", line 336, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/http/client.py", line 297, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+TimeoutError: timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/requests/adapters.py", line 696, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 847, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/urllib3/util/retry.py", line 510, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/urllib3/util/util.py", line 39, in reraise
+    raise value
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 793, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 542, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 373, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=600)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/scripts/evaluate.py", line 351, in <module>
+    results = run(a.split, a.n, name, a.workers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/scripts/evaluate.py", line 66, in run
+    list(pool.map(work, todo))
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/nirlevin/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/scripts/evaluate.py", line 57, in work
+    res = local.coder.predict(visits[vid])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/src/pipeline.py", line 120, in predict
+    for dx in self.extract(visit):
+              ^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/src/pipeline.py", line 63, in extract
+    out = self.llm.ask(prompts.EXTRACT_SYSTEM, prompts.EXTRACT_USER.format(**visit), schema)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/src/llm.py", line 21, in ask
+    r = requests.post(f"{self.url}/api/chat", timeout=600, json={
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/requests/api.py", line 134, in post
+    return request("post", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/requests/api.py", line 71, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/requests/sessions.py", line 651, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/requests/sessions.py", line 784, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nirlevin/jupyter_projects/maccabi_qwen/.venv/lib/python3.12/site-packages/requests/adapters.py", line 742, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=600)
+[101/360] V0170 43.43s calls=4 pred=['L70.0']
+[102/360] V0172 43.66s calls=5 pred=['E21.0']
+[103/360] V0167 44.28s calls=5 pred=['R41.9']
+[104/360] V0178 51.73s calls=5 pred=['L30.9']
+[105/360] V0177 52.6s calls=5 pred=[]
+[106/360] V0176 53.67s calls=5 pred=['F80.1']
+[107/360] V0187 21.06s calls=4 pred=['D66']
+[108/360] V0173 125.84s calls=11 pred=['E03.9', 'R29.91']
+[109/360] V0194 50.73s calls=6 pred=['S83.422A']
+[110/360] V0180 87.09s calls=9 pred=['M70.871', 'M79.601']
+[111/360] V0185 93.08s calls=7 pred=['L64.8', 'R21']
+[112/360] V0196 35.89s calls=4 pred=['G11.10']
+[113/360] V0197 34.11s calls=4 pred=['G60.9']
+[114/360] V0189 106.41s calls=9 pred=['I42.00', 'E78.2']
+[115/360] V0199 36.23s calls=4 pred=['M19.072']
+[116/360] V0201 37.12s calls=4 pred=['G71.11']
+[117/360] V0195 152.15s calls=16 pred=['J09.X2', 'I34.0']
+[118/360] V0204 110.93s calls=10 pred=['H52.4', 'M86.08']
+[119/360] V0205 91.88s calls=8 pred=['J60', 'R06.02']
+[120/360] V0207 131.38s calls=12 pred=['K21.9', 'R39.81', 'K22.2']
+[121/360] V0210 66.85s calls=7 pred=['F43.10']
+[122/360] V0211 83.37s calls=9 pred=['M45.9', 'M95.5']
+[123/360] V0209 143.16s calls=15 pred=['M16.12']
+[124/360] V0214 58.82s calls=5 pred=['H25.12']
+[125/360] V0216 61.88s calls=5 pred=['M51.16']
+[126/360] V0213 134.74s calls=11 pred=['I10', 'J36', 'J02.0']
+[127/360] V0217 50.1s calls=4 pred=[]
+[128/360] V0212 148.91s calls=15 pred=['E21.0', 'N20.9', 'R26.0', 'I44.7']
+[129/360] V0220 39.76s calls=5 pred=[]
+[130/360] V0222 78.74s calls=8 pred=['G90.9', 'R51.9']
+[131/360] V0219 94.86s calls=9 pred=['L64.8', 'L60.0']
+[132/360] V0225 43.08s calls=4 pred=['N18.5']
+[133/360] V0218 144.56s calls=15 pred=['E27.1', 'I95.9', 'L42', 'L81.7']
+[134/360] V0226 50.53s calls=5 pred=['B35.3']

@@ -1,0 +1,291 @@
+# Evaluation report — test100_qwen3_4b: split=test, visits=100, gold codes=150 (majority ≥2/3)
+
+## Final codes
+- Exact code: P=0.277 R=0.293 F1=0.285
+- 3-char category (lenient): P=0.405 R=0.413 F1=0.409
+- Visit exact-set match: 0.190
+- Precision vs ANY annotator: 0.289
+- Predicted codes per visit: 1.59 (gold 1.50)
+
+## Per-visit (multi-label) metrics
+Micro P/R/F1 above pools all (visit, code) pairs; here every visit counts once.
+- Per-visit average: P=0.309 R=0.310 F1=0.302 Jaccard=0.266
+- Exact set match 0.19; all gold codes found 0.21; at least one found 0.43
+
+| Gold codes in visit | Visits | Micro P / R / F1 | Per-visit F1 | Exact set match | Gold found: all / some / none (visits) | Codes predicted per visit |
+|---|---|---|---|---|---|---|
+| 1 | 58 | 0.351 / 0.345 / 0.348 | 0.333 | 0.31 | 20 / 0 / 38 | 0.98 |
+| 2 | 34 | 0.257 / 0.265 / 0.261 | 0.268 | 0.03 | 1 / 16 / 17 | 2.06 |
+| 3 | 8 | 0.188 / 0.250 / 0.214 | 0.216 | 0.00 | 0 / 6 / 2 | 4.00 |
+
+## Human ceiling (pairwise annotator agreement, same visits)
+- DR_A vs DR_B: P=0.916 R=0.979 F1=0.946
+- DR_A vs DR_C: P=0.903 R=0.993 F1=0.946
+- DR_B vs DR_C: P=0.917 R=0.943 F1=0.930
+
+## Stage recalls (billable gold codes)
+- Chapter Recall@3 (any diagnosis of the visit): 129/148 = 0.872
+- Section Recall@3 (any diagnosis of the visit): 86/148 = 0.581
+- Diagnosis extracted (matched by eval judge): 109/148 = 0.736
+- Chapter recall given extracted: 92/109 = 0.844
+- Section recall given extracted: 70/109 = 0.642
+- Gold reached the final candidate list: 59/148 = 0.399
+- Final choice correct when gold reached the final list: 39/59 = 0.661
+
+## Where each gold code ends up (first failing stage)
+- unreachable: gold code not billable in FY2027: 2 (1.3%)
+- correct: 44 (29.3%)
+- diagnosis never extracted: 37 (24.7%)
+- extracted, wrong CHAPTER: 16 (10.7%)
+- extracted, right chapter, wrong SECTION: 21 (14.0%)
+- extracted, lost in CATEGORY/deeper narrowing: 11 (7.3%)
+- reached final list, wrong FINAL choice: 19 (12.7%)
+
+## False positives
+- different category (extra/wrong diagnosis): 94
+- same 3-char category as a gold code (granularity): 21
+
+## Seen (code in dev gold) vs unseen
+- seen: recall 15/37 = 0.405
+- unseen: recall 29/111 = 0.261
+
+## Validity & cost
+- Valid billable codes: 159/159
+- Evidence verbatim in note: 167/181 diagnoses (others snapped to the closest note line)
+- Diagnoses extracted per visit: 1.81; NONE answers: 18
+- Narrowing depth per diagnosis: {0: 67, 1: 98, 2: 16}
+- Final candidate list size: mean 37.6, max 99
+- Seconds/visit: 99.9; LLM calls/visit: 7.7
+
+## Step-by-step details
+
+### Path per extracted diagnosis (MAX_CODES = 100)
+- Section → code directly (≤ 100 codes under the chosen sections): 67/181 (37%)
+- Section → category (→ deeper) → code (> 100 codes): 114/181 (63%); narrowing levels used: {1: 98, 2: 16}
+- Codes under the chosen sections — direct path: mean 53.7, median 48, max 99; narrowed path: mean 530.7, median 271, max 5029
+
+### Options shown to the model at each step (per diagnosis)
+- Chapter step: 22 options; chapters chosen: mean 1.7, median 2, max 3
+- Section step: options mean 22.0, median 22, max 72; sections chosen: mean 1.6, median 1, max 3
+- Category step (114 diagnoses): options mean 19.6, median 18, max 46; codes left after it mean 55.1, median 24, max 351
+- Deeper level 2 (16 diagnoses): options mean 12.9, median 12, max 28; codes left after it mean 27.5, median 24, max 90
+- Final code step: candidates mean 37.6, median 31, max 99 (direct path mean 53.7, median 48, max 99; narrowed path mean 28.1, median 18, max 99)
+
+### Step accuracy (gold codes whose diagnosis was extracted; each step given the previous one was right)
+- Chapter: gold chapter among chosen chapters: 92/109 = 0.844
+- Section: gold section among chosen sections | chapter right: 70/92 = 0.761
+- Category: gold category kept at the category step | section right & narrowing ran: 36/46 = 0.783
+- Narrowing overall: gold still in final candidates | section right & narrowing ran: 35/46 = 0.761
+- Code: correct final code | gold in candidates: 39/59 = 0.661 (direct path 13/24 = 0.542; narrowed path 26/35 = 0.743)
+- End to end, for extracted diagnoses: 39/109 = 0.358
+
+### Confidence (final step only; no threshold is applied by the system)
+- high (0.9): 135 codes, precision 0.289
+- medium (0.6): 24 codes, precision 0.208
+- If only codes with score ≥ 0.3 were returned: P=0.277 R=0.293 F1=0.285
+- If only codes with score ≥ 0.6 were returned: P=0.277 R=0.293 F1=0.285
+- If only codes with score ≥ 0.9 were returned: P=0.289 R=0.260 F1=0.274
+
+## Failure examples
+
+### V0011  gold=['J00', 'J40']  pred=['J41.0']
+```
+ביקור מרפאתי. בת 53.
+ממצא תומך: ללא חום גבוה או סימני זיהום חיידקי.
+מהשיחה ומהתיק: נזלת מימית עם כאב גרון קל מספר ימים.
+בסקירת מצב בריאותי נוסף עלה כי שיעול ליחתי שאינו עונה בבירור על משך ברונכיטיס כרונית.
+לגבי הבעיה הנוספת נמצאו: בהאזנה חרחורים גסים מפוזרים.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **chronic bronchitis** | chapters ['ch10'] → sections ['J40-J4B'] (40 codes) → 40 cands → **J41.0** (high)
+  - gold J00 [matched dx: NONE]: Ch.10 Diseases of the respiratory system (J00-J99) > Acute upper respiratory infections (J00-J06) > J00 Acute nasopharyngitis [common cold]
+  - gold J40 [matched dx: NONE]: Ch.10 Diseases of the respiratory system (J00-J99) > Chronic lower respiratory diseases (J40-J4B) > J40 Bronchitis, not specified as acute or chronic
+
+### V0003  gold=['E29.1', 'F25.9']  pred=['R53.82', 'F29']
+```
+ביקור מרפאתי. בת 67.
+סיבת הפנייה: תסמיני פסיכוזה לצד פרקים אפקטיביים משמעותיים.
+בבדיקה: נדרשת תוכנית טיפול פסיכיאטרית רציפה.
+נושא נוסף שהועלה בביקור: ירידה בחשק המיני ועייפות לאורך זמן.
+הממצא המחזק את התלונה הנוספת: טסטוסטרון בוקר נמוך בשתי מדידות.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **psychotic symptoms with significant functional impairment** | chapters ['ch5'] → sections ['F20-F29'] (18 codes) → 18 cands → **F29** (medium)
+- **low testosterone with persistent fatigue** | chapters ['ch4', 'ch18'] → sections ['E20-E35', 'R50-R69'] (167 codes) → E29/R53(10) → 10 cands → **R53.82** (high)
+  - gold E29.1 [matched dx: low testosterone with persistent fatigue]: Ch.4 Endocrine, nutritional and metabolic diseases (E00-E89) > Disorders of other endocrine glands (E20-E35) > E29 Testicular dysfunction > E29.1 Testicular hypofunction
+  - gold F25.9 [matched dx: psychotic symptoms with significant functional impairment]: Ch.5 Mental, Behavioral and Neurodevelopmental disorders (F01-F99) > Schizophrenia, schizotypal, delusional, and other non-mood psychotic disorders (F20-F29) > F25 Schizoaffective disorders > F25.9 Schizoaffective disorder, unspecified
+
+### V0016  gold=['J05.0']  pred=['R06.83']
+```
+ביקור מרפאתי. בת 15.
+ממצא תומך: סטרידור שאיפתי קל במנוחה.
+לדברי המטופל/ת, שיעול נבחני וצרידות בילד בלילה.
+המידע הושווה לתיעוד הרפואי הקודם.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **snoring with mild obstructive symptoms** | chapters ['ch10', 'ch18'] → sections ['R00-R09'] (58 codes) → 58 cands → **R06.83** (high)
+  - gold J05.0 [matched dx: snoring with mild obstructive symptoms]: Ch.10 Diseases of the respiratory system (J00-J99) > Acute upper respiratory infections (J00-J06) > J05 Acute obstructive laryngitis [croup] and epiglottitis > J05.0 Acute obstructive laryngitis [croup]
+
+### V0015  gold=['F80.9', 'L28.0']  pred=['F80.9', 'L53.9']
+```
+ביקור מרפאתי לילד/ה בגיל 12 בליווי הורה.
+מהשיחה ומהתיק: עיכוב בדיבור ביחס לבני גילו ללא אבחנה מלאה.
+ממצא תומך: הופנה לאבחון שפה מקיף.
+הערכה קלינית ראשונית: הפרעה התפתחותית בשפה ובדיבור לא מסווגת.
+בסקירת מצב בריאותי נוסף עלה כי רובד מעובה ומגרד בעור לאחר שפשוף חוזר.
+הנתונים הרלוונטיים לכך: הדגשת קווי העור.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **Developmental speech and language disorder, unspecified** | chapters ['ch5', 'ch18'] → sections ['F80-F89', 'F90-F98', 'R50-R69'] (123 codes) → F80(8) → 8 cands → **F80.9** (high)
+- **Erythema, unspecified** | chapters ['ch12', 'ch18'] → sections ['L49-L54', 'R20-R23'] (59 codes) → 59 cands → **L53.9** (high)
+  - gold F80.9 [matched dx: Developmental speech and language disorder, unspecified]: Ch.5 Mental, Behavioral and Neurodevelopmental disorders (F01-F99) > Pervasive and specific developmental disorders (F80-F89) > F80 Specific developmental disorders of speech and language > F80.9 Developmental disorder of speech and language, unspecified
+  - gold L28.0 [matched dx: Erythema, unspecified]: Ch.12 Diseases of the skin and subcutaneous tissue (L00-L99) > Dermatitis and eczema (L20-L30) > L28 Lichen simplex chronicus and prurigo > L28.0 Lichen simplex chronicus
+
+### V0012  gold=['I48.0', 'J03.90']  pred=['I48.0', 'R13.10']
+```
+ביקור מרפאתי. בת 61.
+תועד גם: רישום קצב בזמן התקף הדגים AF.
+מגיע/ה לבדיקה עקב דפיקות לב לא סדירות לסירוגין שחלפו מעצמן.
+הערכה קלינית ראשונית: פרפור פרוזדורים התקפי.
+נושא נוסף שהועלה בביקור: כאב בבליעה ושקדים נפוחים עם תפליט.
+הממצא המחזק את התלונה הנוספת: בלוטות צוואר רגישות.
+המידע הושווה לתיעוד הרפואי הקודם.
+סוכם על תוכנית טיפול ומעקב בהתאם לבעיות שנדונו בביקור.
+```
+- **atrial fibrillation** | chapters ['ch9'] → sections ['I30-I5A'] (146 codes) → I48(9) → 9 cands → **I48.0** (high)
+- **dysphagia** | chapters ['ch11', 'ch18'] → sections ['R10-R19', 'K00-K14'] (301 codes) → R13(7) → 7 cands → **R13.10** (high)
+- **cervical rigidity** | chapters ['ch13', 'ch18'] → sections ['M50-M54', 'R20-R23', 'R50-R69'] (227 codes) → M50(42) → 42 cands → **NONE** (high)
+  - gold I48.0 [matched dx: atrial fibrillation]: Ch.9 Diseases of the circulatory system (I00-I99) > Other forms of heart disease (I30-I5A) > I48 Atrial fibrillation and flutter > I48.0 Paroxysmal atrial fibrillation
+  - gold J03.90 [matched dx: NONE]: Ch.10 Diseases of the respiratory system (J00-J99) > Acute upper respiratory infections (J00-J06) > J03 Acute tonsillitis > J03.9 Acute tonsillitis, unspecified > J03.90 Acute tonsillitis, unspecified
+
+### V0017  gold=['D68.00', 'D75.1']  pred=['D68.00']
+```
+ביקור מרפאתי. בן 56.
+בימים האחרונים דווח כי דימום ממושך לאחר טיפולי שיניים ודימומי אף חוזרים.
+תועד גם: בדיקות פקטור פון וילברנד חריגות.
+הערכה קלינית ראשונית: מחלת פון וילברנד לא מסווגת.
+נושא נוסף שהועלה בביקור: רמות המוגלובין והמטוקריט גבוהות בעישון ממושך.
+הממצא המחזק את התלונה הנוספת: אריתרופואטין מוגבר.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **unspecified von Willebrand disease** | chapters ['ch3'] → sections ['D65-D69'] (41 codes) → 41 cands → **D68.00** (high)
+- **chronic tobacco use** | chapters ['ch4'] → sections ['E50-E64'] (50 codes) → 50 cands → **NONE** (high)
+  - gold D68.00 [matched dx: unspecified von Willebrand disease]: Ch.3 Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism (D50-D89) > Coagulation defects, purpura and other hemorrhagic conditions (D65-D69) > D68 Other coagulation defects > D68.0 Von Willebrand disease > D68.00 Von Willebrand disease, unspecified
+  - gold D75.1 [matched dx: NONE]: Ch.3 Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism (D50-D89) > Other disorders of blood and blood-forming organs (D70-D77) > D75 Other and unspecified diseases of blood and blood-forming organs > D75.1 Secondary polycythemia
+
+### V0023  gold=['P92.9']  pred=['E44.1']
+```
+ביקור מרפאתי לילד/ה בגיל 5 בליווי הורה.
+סיבת הפנייה: תינוק בן ימים מתקשה לינוק ועולה במשקל לאט.
+ממצא תומך: האכלה קצרה ונדרשת הערכת יועצת הנקה.
+המטופל/ת דיווח/ה על תפקוד עצמאי בבית.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **feeding difficulty in a 5-year-old child** | chapters ['ch4'] → sections ['E40-E46'] (8 codes) → 8 cands → **E44.1** (medium)
+  - gold P92.9 [matched dx: NONE]: Ch.16 Certain conditions originating in the perinatal period (P00-P96) > Other disorders originating in the perinatal period (P90-P96) > P92 Feeding problems of newborn > P92.9 Feeding problem of newborn, unspecified
+
+### V0019  gold=['E11.22', 'L82.1']  pred=['L03.90', 'E11.22']
+```
+ביקור מרפאתי. בן 59.
+מתאר/ת כי נגע חום שנראה מודבק על פני העור.
+בדיקות וממצאים: מראה שעוותי וגבולות ברורים.
+בנוסף, נדונה בעיה נפרדת: סוכרת ממושכת עם אלבומינוריה וירידה בתפקוד הכלייתי.
+לגבי הבעיה הנוספת נמצאו: יחס אלבומין לקריאטינין מוגבר לאורך זמן.
+לא הועלתה תלונה חריפה נוספת מעבר לנושאים שנדונו.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **acute cutaneous infection** | chapters ['ch12', 'ch4', 'ch14'] → sections ['L00-L08'] (159 codes) → L03(55) → 55 cands → **L03.90** (high)
+- **chronic diabetes mellitus with albuminuria and reduced renal function** | chapters ['ch4', 'ch14'] → sections ['E08-E13', 'N00-N08', 'N17-N19'] (554 codes) → E11/N18(96) → 96 cands → **E11.22** (high)
+  - gold E11.22 [matched dx: chronic diabetes mellitus with albuminuria and reduced renal function]: Ch.4 Endocrine, nutritional and metabolic diseases (E00-E89) > Diabetes mellitus (E08-E13) > E11 Type 2 diabetes mellitus > E11.2 Type 2 diabetes mellitus with kidney complications > E11.22 Type 2 diabetes mellitus with diabetic chronic kidney disease
+  - gold L82.1 [matched dx: chronic diabetes mellitus with albuminuria and reduced renal function]: Ch.12 Diseases of the skin and subcutaneous tissue (L00-L99) > Other disorders of the skin and subcutaneous tissue (L80-L99) > L82 Seborrheic keratosis > L82.1 Other seborrheic keratosis
+
+### V0022  gold=['M77.12', 'S53.401A']  pred=['S43.004A', 'M79.622']
+```
+הערכה דחופה במוקד. בת 84.
+לדברי המטופל/ת, כאב ונפיחות במרפק ימין לאחר נפילה.
+בדיקות וממצאים: צילום ללא שבר וללא פריקה.
+הערכה קלינית ראשונית: נקע לא מסווג במרפק ימין.
+נושא נוסף שהועלה בביקור: כאב לטרלי במרפק שמאל לאחר עבודה עם כלי עבודה.
+הממצא המחזק את התלונה הנוספת: רגישות באפיקונדיל הלטרלי.
+המטופל/ת דיווח/ה על תפקוד עצמאי בבית.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **dislocation of right shoulder, initial encounter** | chapters ['ch13', 'ch19'] → sections ['S40-S49'] (2730 codes) → S43(333) → S43.0(90) → 90 cands → **S43.004A** (high)
+- **left shoulder sensitivity, unspecified** | chapters ['ch13', 'ch18'] → sections ['M70-M79'] (358 codes) → M79(52) → 52 cands → **M79.622** (high)
+  - gold M77.12 [matched dx: dislocation of right shoulder, initial encounter]: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Other soft tissue disorders (M70-M79) > M77 Other enthesopathies > M77.1 Lateral epicondylitis > M77.12 Lateral epicondylitis, left elbow
+  - gold S53.401A [matched dx: NONE]: Ch.19 Injury, poisoning and certain other consequences of external causes (S00-T88) > Injuries to the elbow and forearm (S50-S59) > S53 Dislocation and sprain of joints and ligaments of elbow > S53.4 Sprain of elbow > S53.40 Unspecified sprain of elbow > S53.401 Unspecified sprain of right elbow > S53.401A Unspecified sprain of right elbow, initial encounter
+
+### V0027  gold=['R76.8']  pred=['R76.81']
+```
+ביקור מרפאתי. בן 74.
+סיבת הפנייה: נוגדנים עצמיים חיוביים ללא מחלה קלינית מאובחנת.
+על פי המסמכים: אין מפרקים נפוחים או קריטריונים למחלה מוגדרת.
+הערכה קלינית ראשונית: ממצאים אימונולוגיים חריגים אחרים בדם.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **positive autoimmune markers without clinically defined disease** | chapters ['ch3', 'ch18'] → sections ['R70-R79'] (45 codes) → 45 cands → **R76.81** (high)
+  - gold R76.8 [matched dx: positive autoimmune markers without clinically defined disease]: Ch.18 Symptoms, signs and abnormal clinical and laboratory findings, not elsewhere classified (R00-R99) > Abnormal findings on examination of blood, without diagnosis (R70-R79) > R76 Other abnormal immunological findings in serum > R76.8 Other specified abnormal immunological findings in serum
+
+### V0018  gold=['E29.1', 'E87.5', 'F41.1']  pred=['R53.82', 'R53.1', 'F51.01']
+```
+ביקור מרפאתי. בת 74.
+סיבת הפנייה: דאגנות בלתי נשלטת בנושאים רבים במשך חודשים.
+ממצא תומך: מתח שרירי והפרעת שינה.
+תלונה נוספת שנבדקה: חולשת שרירים במטופל עם הפרעת תפקוד כליות.
+לגבי הבעיה הנוספת נמצאו: אשלגן 6.2 ושינויים באקג.
+בסקירת מצב בריאותי נוסף עלה כי ירידה בחשק המיני ועייפות לאורך זמן.
+הנתונים הרלוונטיים לכך: טסטוסטרון בוקר נמוך בשתי מדידות.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **hyperkalemia** | chapters ['ch14'] → sections ['N25-N29'] (22 codes) → 22 cands → **NONE** (high)
+- **hypothyroidism** | chapters ['ch4'] → sections ['E00-E07'] (48 codes) → 48 cands → **NONE** (high)
+- **chronic fatigue** | chapters ['ch18', 'ch4', 'ch5'] → sections ['R50-R69'] (68 codes) → 68 cands → **R53.82** (high)
+- **muscle weakness** | chapters ['ch13', 'ch18'] → sections ['M60-M63', 'R25-R29', 'R50-R69'] (560 codes) → R53(6) → 6 cands → **R53.1** (high)
+- **chronic sleep disorder** | chapters ['ch5', 'ch6'] → sections ['F50-F59', 'G40-G47'] (271 codes) → F51/G47(58) → 58 cands → **F51.01** (high)
+  - gold E29.1 [matched dx: chronic fatigue]: Ch.4 Endocrine, nutritional and metabolic diseases (E00-E89) > Disorders of other endocrine glands (E20-E35) > E29 Testicular dysfunction > E29.1 Testicular hypofunction
+  - gold E87.5 [matched dx: NONE]: Ch.4 Endocrine, nutritional and metabolic diseases (E00-E89) > Metabolic disorders (E70-E88) > E87 Other disorders of fluid, electrolyte and acid-base balance > E87.5 Hyperkalemia
+  - gold F41.1 [matched dx: chronic fatigue]: Ch.5 Mental, Behavioral and Neurodevelopmental disorders (F01-F99) > Anxiety, dissociative, stress-related, somatoform and other nonpsychotic mental disorders (F40-F48) > F41 Other anxiety disorders > F41.1 Generalized anxiety disorder
+
+### V0029  gold=['H90.3']  pred=[]
+```
+ביקור מרפאתי. בן 32.
+מגיע/ה לבדיקה עקב קושי להבין דיבור ברקע רועש בשתי האוזניים.
+בבדיקה: אודיוגרמה מציגה ירידה עצבית דו צדדית.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **bilateral sensorineural hearing loss** | chapters ['ch8'] → sections ['H80-H83'] (77 codes) → 77 cands → **NONE** (high)
+  - gold H90.3 [matched dx: bilateral sensorineural hearing loss]: Ch.8 Diseases of the ear and mastoid process (H60-H95) > Other disorders of ear (H90-H94) > H90 Conductive and sensorineural hearing loss > H90.3 Sensorineural hearing loss, bilateral
+
+### V0032  gold=['M72.2', 'M76.62']  pred=['M76.62']
+```
+ביקור מרפאתי. בת 70.
+מגיע/ה לבדיקה עקב כאב בעקב בצעדים הראשונים בבוקר.
+תועד גם: רגישות בחיבור הפציה הפלנטרית.
+בסקירת מצב בריאותי נוסף עלה כי כאב בצד שמאל מאחורי העקב אחרי אימון קפיצות.
+הנתונים הרלוונטיים לכך: רגישות בגיד ללא קרע.
+נרשם גם: אכילס טנדיניטיס ברגל שמאל.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **left Achilles tendinitis** | chapters ['ch13'] → sections ['M65-M67', 'M70-M79'] (737 codes) → M76(34) → 34 cands → **M76.62** (high)
+  - gold M72.2 [matched dx: NONE]: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Other soft tissue disorders (M70-M79) > M72 Fibroblastic disorders > M72.2 Plantar fascial fibromatosis
+  - gold M76.62 [matched dx: left Achilles tendinitis]: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Other soft tissue disorders (M70-M79) > M76 Enthesopathies, lower limb, excluding foot > M76.6 Achilles tendinitis > M76.62 Achilles tendinitis, left leg
+
+### V0033  gold=['N30.00']  pred=['R31.21']
+```
+ביקור מרפאתי. בן 51.
+בימים האחרונים דווח כי צריבה ודחיפות בהשתנה ללא חום.
+תועד גם: לויקוציטים בבדיקת שתן ללא סימני פיאלונפריטיס.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **hematuria without pyelonephritis** | chapters ['ch14', 'ch18'] → sections ['N00-N08', 'R30-R39'] (149 codes) → R31(5) → 5 cands → **R31.21** (high)
+  - gold N30.00 [matched dx: NONE]: Ch.14 Diseases of the genitourinary system (N00-N99) > Other diseases of the urinary system (N30-N39) > N30 Cystitis > N30.0 Acute cystitis > N30.00 Acute cystitis without hematuria
+
+### V0034  gold=['N04.9']  pred=['R80.0']
+```
+ביקור מרפאתי. בת 59.
+מהשיחה ומהתיק: בצקות נרחבות ושתן מוקצף.
+ממצא תומך: פרוטאינוריה ניכרת ואלבומין נמוך.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **proteinuria** | chapters ['ch14', 'ch18'] → sections ['N00-N08', 'R80-R82'] (132 codes) → R80(6) → 6 cands → **R80.0** (high)
+  - gold N04.9 [matched dx: proteinuria]: Ch.14 Diseases of the genitourinary system (N00-N99) > Glomerular diseases (N00-N08) > N04 Nephrotic syndrome > N04.9 Nephrotic syndrome with unspecified morphologic changes

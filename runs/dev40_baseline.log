@@ -1,0 +1,232 @@
+[1/40] V0004 7.52s calls=4 pred=['Z00.00']
+[2/40] V0006 14.88s calls=8 pred=['H10.13']
+[3/40] V0008 17.81s calls=8 pred=['L23.9', 'G90.9']
+[4/40] V0009 4.31s calls=4 pred=['H71.01']
+[5/40] V0010 43.1s calls=11 pred=['M05.749', 'R29.898', 'M05.00']
+[6/40] V0013 17.32s calls=7 pred=['G56.02', 'H30.91']
+[7/40] V0020 5.17s calls=3 pred=['F03.94']
+[8/40] V0024 7.15s calls=4 pred=[]
+[9/40] V0030 13.91s calls=6 pred=['N63.11', 'N99.0']
+[10/40] V0036 6.74s calls=3 pred=['F33.1']
+[11/40] V0044 5.94s calls=3 pred=['D64.2']
+[12/40] V0045 3.71s calls=4 pred=['N08']
+[13/40] V0048 33.13s calls=7 pred=[]
+[14/40] V0052 147.15s calls=7 pred=['I21.9', 'E63.9', 'D53.8']
+[15/40] V0057 47.38s calls=4 pred=['H15.9']
+[16/40] V0060 5.23s calls=3 pred=['K52.831']
+[17/40] V0069 4.92s calls=3 pred=['F09']
+[18/40] V0072 4.82s calls=4 pred=['G00.0']
+[19/40] V0080 12.05s calls=9 pred=['G98.8', 'G71.8']
+[20/40] V0082 12.08s calls=10 pred=['M02.9', 'M00.9']
+[21/40] V0085 4.3s calls=4 pred=[]
+[22/40] V0087 2.64s calls=3 pred=['B16.9']
+[23/40] V0089 8.33s calls=6 pred=['N21.0', 'N40.1']
+[24/40] V0090 7.23s calls=5 pred=[]
+[25/40] V0100 3.43s calls=3 pred=['N20.0']
+[26/40] V0104 15.14s calls=11 pred=['E20.818', 'D61.818', 'G89.29']
+[27/40] V0105 14.68s calls=10 pred=['E11.319', 'K20.90']
+[28/40] V0108 5.28s calls=4 pred=['M19.012']
+[29/40] V0109 4.87s calls=4 pred=['N10']
+[30/40] V0110 15.23s calls=9 pred=['I74.11', 'I25.810', 'Z80.0']
+[31/40] V0111 3.9s calls=4 pred=['Z00.00']
+[32/40] V0112 13.96s calls=9 pred=['E11.65', 'I67.2', 'N18.30']
+[33/40] V0117 6.69s calls=5 pred=['F40.11']
+[34/40] V0125 6.63s calls=5 pred=['I00']
+[35/40] V0141 3.21s calls=3 pred=['D50.9']
+[36/40] V0151 5.22s calls=4 pred=['L08.0']
+[37/40] V0153 8.37s calls=6 pred=['M00.9']
+[38/40] V0155 5.88s calls=4 pred=['I50.32']
+[39/40] V0157 2.99s calls=3 pred=['D50.0']
+[40/40] V0166 15.81s calls=10 pred=['I10', 'E29.1', 'I69.090']
+# Evaluation report — split=dev, visits=40, gold codes=60 (majority ≥2/3)
+
+## Final codes
+- Exact code: P=0.182 R=0.167 F1=0.174
+- 3-char category (lenient): P=0.296 R=0.267 F1=0.281
+- Visit exact-set match: 0.100
+- Precision vs ANY annotator: 0.182
+- Predicted codes per visit: 1.38 (gold 1.50)
+
+## Human ceiling (pairwise annotator agreement, same visits)
+- DR_A vs DR_B: P=1.000 R=0.967 F1=0.983
+- DR_A vs DR_C: P=0.914 R=0.964 F1=0.938
+- DR_B vs DR_C: P=0.917 R=1.000 F1=0.957
+
+## Where gold codes are lost (first failing stage)
+- lost at SECTION (incl. diagnosis not extracted): 41 (68.3%)
+- correct: 10 (16.7%)
+- lost at FINAL code choice: 8 (13.3%)
+- lost at CATEGORY/deeper narrowing: 1 (1.7%)
+
+- Section Recall@3: 0.317
+- Category/deeper recall (when narrowing ran): 9/11
+- Final-candidate-list recall: 0.300
+- Final choice accuracy given gold in candidates: 0.556
+
+## False positives
+- different category (extra/wrong diagnosis): 38
+- same 3-char category as a gold code (granularity): 7
+
+## Validity & cost
+- Valid billable codes: 55/55
+- Evidence verbatim in note: 60/70 diagnoses (others snapped to the closest note line)
+- Diagnoses extracted per visit: 1.75; NONE answers: 15
+- Narrowing depth per diagnosis: {0: 34, 1: 29, 2: 6, 3: 1}
+- Final candidate list size: mean 38.0, max 99
+- Seconds/visit: 14.2; LLM calls/visit: 5.6
+
+## Failure examples
+
+### V0004  gold=['Z23']  pred=['Z00.00']
+```
+ביקור מרפאתי. בן 74.
+על פי המסמכים: אין מחלת חום פעילה בבדיקה.
+מגיע/ה לבדיקה עקב הגעה לקבלת חיסון עונתי.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **Routine preventive visit for seasonal vaccination** | sections ['Z00-Z13'] (156 codes) → Z00(13) → 13 cands → **Z00.00** (high)
+  - gold Z23: Ch.21 Factors influencing health status and contact with health services (Z00-Z99) > Persons with potential health hazards related to communicable diseases (Z20-Z29) > Z23 Encounter for immunization
+
+### V0006  gold=['E55.9', 'H10.13', 'H52.4']  pred=['H10.13']
+```
+ביקור מרפאתי. בת 29.
+בדיקות וממצאים: פפילות בלחמית ללא הפרשה מוגלתית.
+מגיע/ה לבדיקה עקב גרד ודמעת בשתי העיניים אחרי חשיפה לאבקנים.
+בנוסף, נדונה בעיה נפרדת: קושי לקרוא טקסט קטן לאחר גיל ארבעים.
+הנתונים הרלוונטיים לכך: נדרש תיקון לקרוב למרות ראייה טובה למרחק.
+נושא נוסף שהועלה בביקור: כאבי שרירים לא ספציפיים ובדיקת ויטמין D נמוכה.
+הממצא המחזק את התלונה הנוספת: 25-OH Vitamin D מתחת לטווח.
+לא הועלתה תלונה חריפה נוספת מעבר לנושאים שנדונו.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **allergic conjunctivitis** | sections ['H10-H11'] (167 codes) → H10(72) → 72 cands → **H10.13** (high)
+- **presbyopia** | sections ['G35-G37'] (21 codes) → 21 cands → **NONE** (high)
+- **vitamin D deficiency** | sections ['D50-D53'] (19 codes) → 19 cands → **NONE** (high)
+  - gold E55.9: Ch.4 Endocrine, nutritional and metabolic diseases (E00-E89) > Other nutritional deficiencies (E50-E64) > E55 Vitamin D deficiency > E55.9 Vitamin D deficiency, unspecified
+  - gold H10.13: Ch.7 Diseases of the eye and adnexa (H00-H59) > Disorders of conjunctiva (H10-H11) > H10 Conjunctivitis > H10.1 Acute atopic conjunctivitis > H10.13 Acute atopic conjunctivitis, bilateral
+  - gold H52.4: Ch.7 Diseases of the eye and adnexa (H00-H59) > Disorders of ocular muscles, binocular movement, accommodation and refraction (H49-H52) > H52 Disorders of refraction and accommodation > H52.4 Presbyopia
+
+### V0008  gold=['E87.6', 'L25.9']  pred=['L23.9', 'G90.9']
+```
+ביקור מרפאתי. בן 35.
+תועד גם: אריתמה וקילוף באזור החשיפה.
+מהשיחה ומהתיק: פריחה אחרי חשיפה לחומר חדש, טרם סווג המנגנון.
+הערכה קלינית ראשונית: דרמטיטיס ממגע לא מסווגת.
+בנוסף, נדונה בעיה נפרדת: חולשה והתכווצויות לאחר הקאות מרובות.
+הממצא המחזק את התלונה הנוספת: אשלגן 2.9.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **contact dermatitis, unspecified** | sections ['L20-L30'] (74 codes) → 74 cands → **L23.9** (high)
+- **muscle weakness and cramps after multiple bowel movements** | sections ['L20-L30', 'G89-G99'] (186 codes) → G90(21) → 21 cands → **G90.9** (medium)
+- **hypokalemia** | sections ['D50-D53'] (19 codes) → 19 cands → **NONE** (high)
+  - gold E87.6: Ch.4 Endocrine, nutritional and metabolic diseases (E00-E89) > Metabolic disorders (E70-E88) > E87 Other disorders of fluid, electrolyte and acid-base balance > E87.6 Hypokalemia
+  - gold L25.9: Ch.12 Diseases of the skin and subcutaneous tissue (L00-L99) > Dermatitis and eczema (L20-L30) > L25 Unspecified contact dermatitis > L25.9 Unspecified contact dermatitis, unspecified cause
+
+### V0009  gold=['H61.21']  pred=['H71.01']
+```
+ביקור מרפאתי. בן 68.
+בהפניה מתוארת תמונה של ירידה פתאומית בשמיעה באוזן ימין ללא כאב.
+בדיקות וממצאים: פקק צרומן מסתיר עור התוף.
+הערכה קלינית ראשונית: פקק שעווה באוזן ימין.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **acute otitis externa of right ear** | sections ['H65-H75'] (288 codes) → H71(20) → 20 cands → **H71.01** (high)
+  - gold H61.21: Ch.8 Diseases of the ear and mastoid process (H60-H95) > Diseases of external ear (H60-H62) > H61 Other disorders of external ear > H61.2 Impacted cerumen > H61.21 Impacted cerumen, right ear
+
+### V0010  gold=['M05.79', 'M79.7']  pred=['M05.749', 'R29.898', 'M05.00']
+```
+ביקור מרפאתי. בן 70.
+בהפניה מתוארת תמונה של נפיחות סימטרית במפרקי אצבעות עם נוקשות בוקר ארוכה.
+תועד גם: RF ו-anti-CCP חיוביים.
+בנוסף, נדונה בעיה נפרדת: כאב מפושט, שינה לא מרעננת וקשיי ריכוז.
+הממצא המחזק את התלונה הנוספת: רגישות נרחבת ללא דלקת מפרקים בבדיקה.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **symmetric hand swelling with morning stiffness** | sections ['M00-M02', 'M05-M14'] (1427 codes) → M05(211) → M05.7(24) → 24 cands → **M05.749** (high)
+- **rheumatoid arthritis** | sections ['M00-M02', 'M05-M14'] (1427 codes) → M05(211) → M05.0(23) → 23 cands → **M05.00** (low)
+- **widespread hypersensitivity without joint inflammation** | sections ['R25-R29'] (72 codes) → 72 cands → **R29.898** (high)
+  - gold M05.79: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Inflammatory polyarthropathies (M05-M14) > M05 Rheumatoid arthritis with rheumatoid factor > M05.7 Rheumatoid arthritis with rheumatoid factor without organ or systems involvement > M05.79 Rheumatoid arthritis with rheumatoid factor of multiple sites without organ or systems involvement
+  - gold M79.7: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Other soft tissue disorders (M70-M79) > M79 Other and unspecified soft tissue disorders, not elsewhere classified > M79.7 Fibromyalgia
+
+### V0013  gold=['G56.02', 'H25.11']  pred=['G56.02', 'H30.91']
+```
+ביקור מרפאתי. בן 60.
+בבדיקה: עכירות גרעינית של העדשה.
+בהפניה מתוארת תמונה של טשטוש ראייה מתקדם וסנוור בלילה בעין ימין.
+הערכה קלינית ראשונית: קטרקט גרעיני תלוי גיל בעין ימין.
+בנוסף, נדונה בעיה נפרדת: כאב ותחושת זרמים בכף יד שמאל בעת נהיגה.
+הממצא המחזק את התלונה הנוספת: EMG מתאים ללחץ על העצב המדיאני משמאל.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **cataract, age-related, right eye** | sections ['H30-H36'] (410 codes) → H30(56) → 56 cands → **H30.91** (medium)
+- **median nerve compression, left upper extremity** | sections ['G50-G59'] (106 codes) → G56(28) → 28 cands → **G56.02** (high)
+  - gold G56.02: Ch.6 Diseases of the nervous system (G00-G99) > Nerve, nerve root and plexus disorders (G50-G59) > G56 Mononeuropathies of upper limb > G56.0 Carpal tunnel syndrome > G56.02 Carpal tunnel syndrome, left upper limb
+  - gold H25.11: Ch.7 Diseases of the eye and adnexa (H00-H59) > Disorders of lens (H25-H28) > H25 Age-related cataract > H25.1 Age-related nuclear cataract > H25.11 Age-related nuclear cataract, right eye
+
+### V0020  gold=['F42.9']  pred=['F03.94']
+```
+ביקור מרפאתי. בן 55.
+מהשיחה ומהתיק: מחשבות טורדניות על זיהום וטקסי רחצה חוזרים.
+תועד גם: זמן רב מוקדש לבדיקות וניקיון.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **obsessive-compulsive disorder** | sections ['F01-F09'] (91 codes) → 91 cands → **F03.94** (medium)
+  - gold F42.9: Ch.5 Mental, Behavioral and Neurodevelopmental disorders (F01-F99) > Anxiety, dissociative, stress-related, somatoform and other nonpsychotic mental disorders (F40-F48) > F42 Obsessive-compulsive disorder > F42.9 Obsessive-compulsive disorder, unspecified
+
+### V0024  gold=['N95.1']  pred=[]
+```
+ביקור מרפאתי. בת 70.
+בהפניה מתוארת תמונה של גלי חום והזעות לילה סביב הפסקת המחזור.
+ממצא תומך: שינוי בדפוסי הווסת בגיל המעבר.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **menopausal hot flashes** | sections ['E08-E13'] (432 codes) → E08(86) → 86 cands → **NONE** (high)
+  - gold N95.1: Ch.14 Diseases of the genitourinary system (N00-N99) > Noninflammatory disorders of female genital tract (N80-N98) > N95 Menopausal and other perimenopausal disorders > N95.1 Menopausal and female climacteric states
+
+### V0030  gold=['N63.11', 'N92.0']  pred=['N63.11', 'N99.0']
+```
+ביקור מרפאתי. בת 36.
+תועד גם: המוגלובין ירד בהדרגה.
+סיבת הפנייה: וסת סדירה אך כבדה מאוד עם קרישי דם.
+בנוסף, נדונה בעיה נפרדת: גוש חדש ברביע העליון-חיצוני של שד ימין.
+הנתונים הרלוונטיים לכך: הפניה להדמיה ובירור רקמתי לפי צורך.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **menorrhagia** | sections ['N99', 'N30-N39'] (129 codes) → N99.0(1) → 1 cands → **N99.0** (low)
+- **new right upper outer quadrant breast mass** | sections ['N60-N65'] (60 codes) → 60 cands → **N63.11** (high)
+  - gold N63.11: Ch.14 Diseases of the genitourinary system (N00-N99) > Disorders of breast (N60-N65) > N63 Unspecified lump in breast > N63.1 Unspecified lump in the right breast > N63.11 Unspecified lump in the right breast, upper outer quadrant
+  - gold N92.0: Ch.14 Diseases of the genitourinary system (N00-N99) > Noninflammatory disorders of female genital tract (N80-N98) > N92 Excessive, frequent and irregular menstruation > N92.0 Excessive and frequent menstruation with regular cycle
+
+### V0044  gold=['D75.1']  pred=['D64.2']
+```
+ביקור מרפאתי. בן 55.
+בימים האחרונים דווח כי רמות המוגלובין והמטוקריט גבוהות בעישון ממושך.
+ממצא תומך: אריתרופואטין מוגבר.
+סוכם על תוכנית טיפול ומעקב בהתאם לבעיות שנדונו בביקור.
+```
+- **secondary polycythemia due to chronic smoking** | sections ['D60-D64', 'B95-B97'] (75 codes) → 75 cands → **D64.2** (medium)
+  - gold D75.1: Ch.3 Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism (D50-D89) > Other disorders of blood and blood-forming organs (D70-D77) > D75 Other and unspecified diseases of blood and blood-forming organs > D75.1 Secondary polycythemia
+
+### V0045  gold=['N43.3']  pred=['N08']
+```
+ביקור מרפאתי. בן 56.
+בהפניה מתוארת תמונה של נפיחות שק אשכים לא כואבת.
+על פי המסמכים: באולטרסאונד נוזל סביב האשך.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **ascites** | sections ['N00-N08'] (107 codes) → N08(1) → 1 cands → **N08** (medium)
+  - gold N43.3: Ch.14 Diseases of the genitourinary system (N00-N99) > Diseases of male genital organs (N40-N53) > N43 Hydrocele and spermatocele > N43.3 Hydrocele, unspecified
+
+### V0048  gold=['A54.9', 'H91.92']  pred=[]
+```
+ביקור מרפאתי. בת 31.
+בימים האחרונים דווח כי הפרשה וצריבה לאחר מגע מיני בלתי מוגן.
+תועד גם: NAAT לגונוריאה חיובי.
+תלונה נוספת שנבדקה: תלונה חדשה על שמיעה חלשה בצד שמאל.
+לגבי הבעיה הנוספת נמצאו: נדרש בירור אודיולוגי נוסף.
+סוכם על תוכנית טיפול ומעקב בהתאם לבעיות שנדונו בביקור.
+```
+- **gonorrhea** | sections ['B95-B97'] (46 codes) → 46 cands → **NONE** (high)
+- **sensorineural hearing loss, left ear** | sections ['G40-G47'] (205 codes) → G40/G43/G44(146) → G40.0/G40.1/G40.2(12) → 12 cands → **NONE** (high)
+  - gold A54.9: Ch.1 Certain infectious and parasitic diseases (A00-B99) > Infections with a predominantly sexual mode of transmission (A50-A64) > A54 Gonococcal infection > A54.9 Gonococcal infection, unspecified
+  - gold H91.92: Ch.8 Diseases of the ear and mastoid process (H60-H95) > Other disorders of ear (H90-H94) > H91 Other and unspecified hearing loss > H91.9 Unspecified hearing loss > H91.92 Unspecified hearing loss, left ear

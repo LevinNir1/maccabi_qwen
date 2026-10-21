@@ -1,0 +1,12 @@
+# Python / local environment
+.venv/
+__pycache__/
+.DS_Store
+
+# Provided assignment data is not redistributed: place visits.csv and physician_annotations.csv in data/
+data/visits.csv
+data/physician_annotations.csv
+*.docx
+
+# Docker build logs (large progress output)
+runs/docker_build*.log

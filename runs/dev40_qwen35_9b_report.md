@@ -1,0 +1,279 @@
+# Evaluation report — dev40_qwen35_9b: split=dev, visits=40, gold codes=60 (majority ≥2/3)
+
+## Final codes
+- Exact code: P=0.635 R=0.667 F1=0.650
+- 3-char category (lenient): P=0.763 R=0.750 F1=0.756
+- Visit exact-set match: 0.475
+- Precision vs ANY annotator: 0.635
+- Predicted codes per visit: 1.57 (gold 1.50)
+
+## Per-visit (multi-label) metrics
+Micro P/R/F1 above pools all (visit, code) pairs; here every visit counts once.
+- Per-visit average: P=0.617 R=0.658 F1=0.631 Jaccard=0.585
+- Exact set match 0.47; all gold codes found 0.55; at least one found 0.75
+
+| Gold codes in visit | Visits | Micro P / R / F1 | Per-visit F1 | Exact set match | Gold found: all / some / none (visits) | Codes predicted per visit |
+|---|---|---|---|---|---|---|
+| 1 | 23 | 0.577 / 0.652 / 0.612 | 0.609 | 0.52 | 15 / 0 / 8 | 1.13 |
+| 2 | 14 | 0.667 / 0.643 / 0.655 | 0.643 | 0.43 | 6 / 6 / 2 | 1.93 |
+| 3 | 3 | 0.700 / 0.778 / 0.737 | 0.746 | 0.33 | 1 / 2 / 0 | 3.33 |
+
+## Human ceiling (pairwise annotator agreement, same visits)
+- DR_A vs DR_B: P=1.000 R=0.967 F1=0.983
+- DR_A vs DR_C: P=0.914 R=0.964 F1=0.938
+- DR_B vs DR_C: P=0.917 R=1.000 F1=0.957
+
+## Stage recalls (billable gold codes)
+- Chapter Recall@3 (any diagnosis of the visit): 58/60 = 0.967
+- Section Recall@3 (any diagnosis of the visit): 52/60 = 0.867
+- Diagnosis extracted (matched by eval judge): 55/60 = 0.917
+- Chapter recall given extracted: 53/55 = 0.964
+- Section recall given extracted: 48/55 = 0.873
+- Gold reached the final candidate list: 45/60 = 0.750
+- Final choice correct when gold reached the final list: 38/45 = 0.844
+
+## Where each gold code ends up (first failing stage)
+- correct: 40 (66.7%)
+- diagnosis never extracted: 4 (6.7%)
+- extracted, wrong CHAPTER: 2 (3.3%)
+- extracted, right chapter, wrong SECTION: 5 (8.3%)
+- extracted, lost in CATEGORY/deeper narrowing: 3 (5.0%)
+- reached final list, wrong FINAL choice: 6 (10.0%)
+
+## False positives
+- different category (extra/wrong diagnosis): 15
+- same 3-char category as a gold code (granularity): 8
+
+## Validity & cost
+- Valid billable codes: 63/63
+- Evidence verbatim in note: 61/71 diagnoses (others snapped to the closest note line)
+- Diagnoses extracted per visit: 1.77; NONE answers: 3
+- Narrowing depth per diagnosis: {0: 20, 1: 43, 2: 8}
+- Final candidate list size: mean 38.3, max 99
+- Seconds/visit: 38.8; LLM calls/visit: 7.8
+
+## Step-by-step details
+
+### Path per extracted diagnosis (MAX_CODES = 100)
+- Section → code directly (≤ 100 codes under the chosen sections): 20/71 (28%)
+- Section → category (→ deeper) → code (> 100 codes): 51/71 (72%); narrowing levels used: {1: 43, 2: 8}
+- Codes under the chosen sections — direct path: mean 59.9, median 62, max 99; narrowed path: mean 278.3, median 170, max 1185
+
+### Options shown to the model at each step (per diagnosis)
+- Chapter step: 22 options; chapters chosen: mean 1.8, median 2, max 3
+- Section step: options mean 22.6, median 24, max 45; sections chosen: mean 1.5, median 1, max 3
+- Category step (51 diagnoses): options mean 14.7, median 16, max 31; codes left after it mean 58.8, median 34, max 312
+- Deeper level 2 (8 diagnoses): options mean 15.1, median 16, max 28; codes left after it mean 8.8, median 7, max 24
+- Final code step: candidates mean 38.3, median 31, max 99 (direct path mean 59.9, median 62, max 99; narrowed path mean 29.8, median 25, max 96)
+
+### Step accuracy (gold codes whose diagnosis was extracted; each step given the previous one was right)
+- Chapter: gold chapter among chosen chapters: 53/55 = 0.964
+- Section: gold section among chosen sections | chapter right: 48/53 = 0.906
+- Category: gold category kept at the category step | section right & narrowing ran: 30/31 = 0.968
+- Narrowing overall: gold still in final candidates | section right & narrowing ran: 28/31 = 0.903
+- Code: correct final code | gold in candidates: 38/45 = 0.844 (direct path 16/17 = 0.941; narrowed path 22/28 = 0.786)
+- End to end, for extracted diagnoses: 38/55 = 0.691
+
+### Confidence (final step only; no threshold is applied by the system)
+- high (0.9): 58 codes, precision 0.672
+- medium (0.6): 5 codes, precision 0.200
+- If only codes with score ≥ 0.3 were returned: P=0.635 R=0.667 F1=0.650
+- If only codes with score ≥ 0.6 were returned: P=0.635 R=0.667 F1=0.650
+- If only codes with score ≥ 0.9 were returned: P=0.672 R=0.650 F1=0.661
+
+## Failure examples
+
+### V0006  gold=['E55.9', 'H10.13', 'H52.4']  pred=['H10.013', 'H10.45', 'H52.4', 'E55.9']
+```
+ביקור מרפאתי. בת 29.
+בדיקות וממצאים: פפילות בלחמית ללא הפרשה מוגלתית.
+מגיע/ה לבדיקה עקב גרד ודמעת בשתי העיניים אחרי חשיפה לאבקנים.
+בנוסף, נדונה בעיה נפרדת: קושי לקרוא טקסט קטן לאחר גיל ארבעים.
+הנתונים הרלוונטיים לכך: נדרש תיקון לקרוב למרות ראייה טובה למרחק.
+נושא נוסף שהועלה בביקור: כאבי שרירים לא ספציפיים ובדיקת ויטמין D נמוכה.
+הממצא המחזק את התלונה הנוספת: 25-OH Vitamin D מתחת לטווח.
+לא הועלתה תלונה חריפה נוספת מעבר לנושאים שנדונו.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **Allergic conjunctivitis** | chapters ['ch7', 'ch18'] → sections ['H10-H11'] (167 codes) → H10(72) → 72 cands → **H10.013** (high)
+- **Bilateral allergic conjunctivitis** | chapters ['ch7', 'ch18'] → sections ['H10-H11'] (167 codes) → H10(72) → 72 cands → **H10.45** (high)
+- **Presbyopia** | chapters ['ch7'] → sections ['H49-H52'] (150 codes) → H52(37) → 37 cands → **H52.4** (high)
+- **Hypovitaminosis D** | chapters ['ch4'] → sections ['E50-E64'] (50 codes) → 50 cands → **E55.9** (high)
+- **25-OH Vitamin D below reference range** | chapters ['ch4', 'ch18'] → sections ['E50-E64'] (50 codes) → 50 cands → **E55.9** (high)
+  - gold E55.9 [matched dx: Hypovitaminosis D]: Ch.4 Endocrine, nutritional and metabolic diseases (E00-E89) > Other nutritional deficiencies (E50-E64) > E55 Vitamin D deficiency > E55.9 Vitamin D deficiency, unspecified
+  - gold H10.13 [matched dx: Bilateral allergic conjunctivitis]: Ch.7 Diseases of the eye and adnexa (H00-H59) > Disorders of conjunctiva (H10-H11) > H10 Conjunctivitis > H10.1 Acute atopic conjunctivitis > H10.13 Acute atopic conjunctivitis, bilateral
+  - gold H52.4 [matched dx: Presbyopia]: Ch.7 Diseases of the eye and adnexa (H00-H59) > Disorders of ocular muscles, binocular movement, accommodation and refraction (H49-H52) > H52 Disorders of refraction and accommodation > H52.4 Presbyopia
+
+### V0009  gold=['H61.21']  pred=['H61.21', 'H91.21']
+```
+ביקור מרפאתי. בן 68.
+בהפניה מתוארת תמונה של ירידה פתאומית בשמיעה באוזן ימין ללא כאב.
+בדיקות וממצאים: פקק צרומן מסתיר עור התוף.
+הערכה קלינית ראשונית: פקק שעווה באוזן ימין.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **Cerumen impaction** | chapters ['ch8'] → sections ['H60-H62'] (144 codes) → H61(64) → 64 cands → **H61.21** (high)
+- **Unilateral hearing loss, right ear** | chapters ['ch8', 'ch18'] → sections ['H90-H94'] (108 codes) → H90/H91(39) → 39 cands → **H91.21** (high)
+  - gold H61.21 [matched dx: Cerumen impaction]: Ch.8 Diseases of the ear and mastoid process (H60-H95) > Diseases of external ear (H60-H62) > H61 Other disorders of external ear > H61.2 Impacted cerumen > H61.21 Impacted cerumen, right ear
+
+### V0010  gold=['M05.79', 'M79.7']  pred=['M05.A', 'M79.7']
+```
+ביקור מרפאתי. בן 70.
+בהפניה מתוארת תמונה של נפיחות סימטרית במפרקי אצבעות עם נוקשות בוקר ארוכה.
+תועד גם: RF ו-anti-CCP חיוביים.
+בנוסף, נדונה בעיה נפרדת: כאב מפושט, שינה לא מרעננת וקשיי ריכוז.
+הממצא המחזק את התלונה הנוספת: רגישות נרחבת ללא דלקת מפרקים בבדיקה.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **Rheumatoid arthritis** | chapters ['ch13'] → sections ['M05-M14'] (1185 codes) → M05/M06(312) → M05.A/M05.6(24) → 24 cands → **M05.A** (high)
+- **Fibromyalgia** | chapters ['ch13', 'ch5'] → sections ['M70-M79', 'F50-F59'] (424 codes) → M79/F51(67) → 67 cands → **M79.7** (high)
+  - gold M05.79 [matched dx: Rheumatoid arthritis]: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Inflammatory polyarthropathies (M05-M14) > M05 Rheumatoid arthritis with rheumatoid factor > M05.7 Rheumatoid arthritis with rheumatoid factor without organ or systems involvement > M05.79 Rheumatoid arthritis with rheumatoid factor of multiple sites without organ or systems involvement
+  - gold M79.7 [matched dx: Fibromyalgia]: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Other soft tissue disorders (M70-M79) > M79 Other and unspecified soft tissue disorders, not elsewhere classified > M79.7 Fibromyalgia
+
+### V0013  gold=['G56.02', 'H25.11']  pred=['H25.11', 'G56.12']
+```
+ביקור מרפאתי. בן 60.
+בבדיקה: עכירות גרעינית של העדשה.
+בהפניה מתוארת תמונה של טשטוש ראייה מתקדם וסנוור בלילה בעין ימין.
+הערכה קלינית ראשונית: קטרקט גרעיני תלוי גיל בעין ימין.
+בנוסף, נדונה בעיה נפרדת: כאב ותחושת זרמים בכף יד שמאל בעת נהיגה.
+הממצא המחזק את התלונה הנוספת: EMG מתאים ללחץ על העצב המדיאני משמאל.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **Age-related nuclear cataract, right eye** | chapters ['ch7'] → sections ['H25-H28'] (119 codes) → H25(30) → 30 cands → **H25.11** (high)
+- **Median nerve entrapment syndrome, left arm** | chapters ['ch6', 'ch13'] → sections ['G50-G59'] (106 codes) → G56(28) → 28 cands → **G56.12** (high)
+  - gold G56.02 [matched dx: Age-related nuclear cataract, right eye]: Ch.6 Diseases of the nervous system (G00-G99) > Nerve, nerve root and plexus disorders (G50-G59) > G56 Mononeuropathies of upper limb > G56.0 Carpal tunnel syndrome > G56.02 Carpal tunnel syndrome, left upper limb
+  - gold H25.11 [matched dx: Age-related nuclear cataract, right eye]: Ch.7 Diseases of the eye and adnexa (H00-H59) > Disorders of lens (H25-H28) > H25 Age-related cataract > H25.1 Age-related nuclear cataract > H25.11 Age-related nuclear cataract, right eye
+
+### V0044  gold=['D75.1']  pred=[]
+```
+ביקור מרפאתי. בן 55.
+בימים האחרונים דווח כי רמות המוגלובין והמטוקריט גבוהות בעישון ממושך.
+ממצא תומך: אריתרופואטין מוגבר.
+סוכם על תוכנית טיפול ומעקב בהתאם לבעיות שנדונו בביקור.
+```
+  - gold D75.1 [matched dx: NONE]: Ch.3 Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism (D50-D89) > Other disorders of blood and blood-forming organs (D70-D77) > D75 Other and unspecified diseases of blood and blood-forming organs > D75.1 Secondary polycythemia
+
+### V0045  gold=['N43.3']  pred=['N43.2', 'N43.3']
+```
+ביקור מרפאתי. בן 56.
+בהפניה מתוארת תמונה של נפיחות שק אשכים לא כואבת.
+על פי המסמכים: באולטרסאונד נוזל סביב האשך.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **Hydrocele** | chapters ['ch14', 'ch18'] → sections ['N40-N53'] (121 codes) → N43(7) → 7 cands → **N43.2** (high)
+- **Hydrocele** | chapters ['ch14', 'ch18'] → sections ['N40-N53'] (121 codes) → N43(7) → 7 cands → **N43.3** (high)
+  - gold N43.3 [matched dx: Hydrocele]: Ch.14 Diseases of the genitourinary system (N00-N99) > Diseases of male genital organs (N40-N53) > N43 Hydrocele and spermatocele > N43.3 Hydrocele, unspecified
+
+### V0048  gold=['A54.9', 'H91.92']  pred=['A54.02', 'H91.92']
+```
+ביקור מרפאתי. בת 31.
+בימים האחרונים דווח כי הפרשה וצריבה לאחר מגע מיני בלתי מוגן.
+תועד גם: NAAT לגונוריאה חיובי.
+תלונה נוספת שנבדקה: תלונה חדשה על שמיעה חלשה בצד שמאל.
+לגבי הבעיה הנוספת נמצאו: נדרש בירור אודיולוגי נוסף.
+סוכם על תוכנית טיפול ומעקב בהתאם לבעיות שנדונו בביקור.
+```
+- **Gonorrhea** | chapters ['ch1', 'ch14'] → sections ['A50-A64'] (142 codes) → A54(31) → 31 cands → **A54.02** (high)
+- **Hearing loss, left ear** | chapters ['ch8', 'ch18'] → sections ['H90-H94'] (108 codes) → H90/H91(39) → 39 cands → **H91.92** (high)
+  - gold A54.9 [matched dx: Gonorrhea]: Ch.1 Certain infectious and parasitic diseases (A00-B99) > Infections with a predominantly sexual mode of transmission (A50-A64) > A54 Gonococcal infection > A54.9 Gonococcal infection, unspecified
+  - gold H91.92 [matched dx: Hearing loss, left ear]: Ch.8 Diseases of the ear and mastoid process (H60-H95) > Other disorders of ear (H90-H94) > H91 Other and unspecified hearing loss > H91.9 Unspecified hearing loss > H91.92 Unspecified hearing loss, left ear
+
+### V0052  gold=['D53.9', 'I22.9']  pred=['I21.4', 'D53.9']
+```
+הערכה דחופה במוקד. בת 40.
+מתאר/ת כי לאחר אוטם טרי הופיע אירוע כלילי חד נוסף.
+ממצא תומך: עלייה מחודשת בטרופונין עם שינויים איסכמיים.
+נושא נוסף שהועלה בביקור: חולשה בחולה עם תזונה מוגבלת ומדדי דם חריגים.
+לגבי הבעיה הנוספת נמצאו: טרם זוהה רכיב התזונה החסר.
+נרשם גם: אנמיה תזונתית לא מסווגת.
+נדרשת הערכה וטיפול דחופים במסגרת מתאימה; תואמה הפניה מיידית.
+```
+- **Acute myocardial infarction** | chapters ['ch9'] → sections ['I20-I25'] (94 codes) → 94 cands → **I21.4** (high)
+- **Unspecified nutritional anemia** | chapters ['ch3', 'ch4'] → sections ['D50-D53'] (19 codes) → 19 cands → **D53.9** (high)
+  - gold D53.9 [matched dx: Unspecified nutritional anemia]: Ch.3 Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism (D50-D89) > Nutritional anemias (D50-D53) > D53 Other nutritional anemias > D53.9 Nutritional anemia, unspecified
+  - gold I22.9 [matched dx: Acute myocardial infarction]: Ch.9 Diseases of the circulatory system (I00-I99) > Ischemic heart diseases (I20-I25) > I22 Subsequent ST elevation (STEMI) and non-ST elevation (NSTEMI) myocardial infarction > I22.9 Subsequent ST elevation (STEMI) myocardial infarction of unspecified site
+
+### V0060  gold=['K56.609']  pred=['R11.10']
+```
+ביקור מרפאתי. בן 30.
+מגיע/ה לבדיקה עקב הקאות חוזרות, נפיחות ואי מעבר גזים.
+על פי המסמכים: צילום בטן עם לולאות מורחבות.
+סוכם על תוכנית טיפול ומעקב בהתאם לבעיות שנדונו בביקור.
+```
+- **Recurrent vomiting, abdominal distension, and inability to pass gas** | chapters ['ch18', 'ch11'] → sections ['R10-R19', 'K20-K31', 'K55-K64'] (362 codes) → R11/R14/R19(39) → 39 cands → **R11.10** (high)
+- **Dilated bowel loops** | chapters ['ch11', 'ch18'] → sections ['K55-K64', 'R10-R19'] (256 codes) → K56/K59/R11(39) → 39 cands → **NONE** (high)
+  - gold K56.609 [matched dx: NONE]: Ch.11 Diseases of the digestive system (K00-K95) > Other diseases of intestines (K55-K64) > K56 Paralytic ileus and intestinal obstruction without hernia > K56.6 Other and unspecified intestinal obstruction > K56.60 Unspecified intestinal obstruction > K56.609 Unspecified intestinal obstruction, unspecified as to partial versus complete obstruction
+
+### V0072  gold=['M34.9']  pred=['M34.9', 'M34.0']
+```
+ביקור מרפאתי. בת 39.
+ממצא תומך: ממצאים אופייניים בסקלרודקטיליה.
+מהשיחה ומהתיק: התקשות עור אצבעות עם ריינו וצרבת.
+לא הועלתה תלונה חריפה נוספת מעבר לנושאים שנדונו.
+נידונו אפשרויות טיפול והמשך בירור בהתאם לתמונה הקלינית.
+```
+- **Scleroderma** | chapters ['ch13', 'ch9'] → sections ['M30-M36'] (84 codes) → 84 cands → **M34.9** (high)
+- **Raynaud phenomenon** | chapters ['ch13', 'ch9', 'ch18'] → sections ['M30-M36', 'I70-I79'] (428 codes) → M34/I79(11) → 11 cands → **M34.0** (high)
+  - gold M34.9 [matched dx: Scleroderma]: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Systemic connective tissue disorders (M30-M36) > M34 Systemic sclerosis [scleroderma] > M34.9 Systemic sclerosis, unspecified
+
+### V0080  gold=['H40.1122', 'M33.20']  pred=['H46.8', 'G71.8']
+```
+ביקור מרפאתי. בן 31.
+בימים האחרונים דווח כי ירידה מתמשכת בסיבי עצב הראייה משמאל.
+תועד גם: OCT ושדה ראייה מתאימים לשלב בינוני.
+בנוסף, נדונה בעיה נפרדת: חולשה שרירית פרוקסימלית וקושי לקום מכיסא.
+לגבי הבעיה הנוספת נמצאו: CK גבוה מאוד.
+סוכם על תוכנית טיפול ומעקב בהתאם לבעיות שנדונו בביקור.
+```
+- **Optic neuritis, left eye** | chapters ['ch6', 'ch7'] → sections ['H46-H47', 'G35-G37', 'G50-G59'] (219 codes) → H46(12) → 12 cands → **H46.8** (high)
+- **Myopathy** | chapters ['ch6', 'ch13'] → sections ['G70-G73', 'M60-M63'] (468 codes) → G71/M62(159) → G71.8/G71.9(2) → 2 cands → **G71.8** (medium)
+  - gold H40.1122 [matched dx: NONE]: Ch.7 Diseases of the eye and adnexa (H00-H59) > Glaucoma (H40-H42) > H40 Glaucoma > H40.1 Open-angle glaucoma > H40.11 Primary open-angle glaucoma > H40.112 Primary open-angle glaucoma, left eye > H40.1122 Primary open-angle glaucoma, left eye, moderate stage
+  - gold M33.20 [matched dx: Myopathy]: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Systemic connective tissue disorders (M30-M36) > M33 Dermatopolymyositis > M33.2 Polymyositis > M33.20 Polymyositis, organ involvement unspecified
+
+### V0082  gold=['L50.9', 'M10.9']  pred=['L29.89', 'M10.9']
+```
+ביקור מרפאתי. בן 84.
+סיבת הפנייה: תפרחת מגרדת שנודדת ממקום למקום.
+בדיקות וממצאים: ללא טריגר ברור.
+בסקירת מצב בריאותי נוסף עלה כי התקף כאב ונפיחות במפרק בוהן שהחל בלילה.
+לגבי הבעיה הנוספת נמצאו: גבישי אורט בנוזל מפרקי.
+נרשם גם: גאוט לא מסווג.
+נקבעו בדיקות והנחיות טיפול מותאמות לממצאים שעלו בשיחה ובבדיקה.
+```
+- **Pruritic migratory rash** | chapters ['ch12', 'ch13'] → sections ['L20-L30', 'L49-L54'] (107 codes) → L50/L29(16) → 16 cands → **L29.89** (high)
+- **Gout, unclassified** | chapters ['ch13', 'ch4'] → sections ['M05-M14'] (1185 codes) → M10(121) → M10.9(1) → 1 cands → **M10.9** (high)
+  - gold L50.9 [matched dx: NONE]: Ch.12 Diseases of the skin and subcutaneous tissue (L00-L99) > Urticaria and erythema (L49-L54) > L50 Urticaria > L50.9 Urticaria, unspecified
+  - gold M10.9 [matched dx: Gout, unclassified]: Ch.13 Diseases of the musculoskeletal system and connective tissue (M00-M99) > Inflammatory polyarthropathies (M05-M14) > M10 Gout > M10.9 Gout, unspecified
+
+### V0085  gold=['J35.01']  pred=['J03.91']
+```
+ביקור מרפאתי. בת 69.
+ממצא תומך: שקדים מצולקים וקריפטיים.
+בימים האחרונים דווח כי כאבי גרון חוזרים עם פקקים בשקדים.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **Recurrent tonsillitis with tonsillar crypts and debris** | chapters ['ch10', 'ch18'] → sections ['J30-J39', 'J00-J06'] (102 codes) → J35/J03(14) → 14 cands → **J03.91** (high)
+  - gold J35.01 [matched dx: Recurrent tonsillitis with tonsillar crypts and debris]: Ch.10 Diseases of the respiratory system (J00-J99) > Other diseases of upper respiratory tract (J30-J39) > J35 Chronic diseases of tonsils and adenoids > J35.0 Chronic tonsillitis and adenoiditis > J35.01 Chronic tonsillitis
+
+### V0087  gold=['A53.9']  pred=['A51.9']
+```
+ביקור מרפאתי. בן 34.
+מהשיחה ומהתיק: בדיקת סקר חיובית לעגבת במהלך בירור.
+תועד גם: סרולוגיה תומכת בזיהום.
+סוכם על תוכנית טיפול ומעקב בהתאם לבעיות שנדונו בביקור.
+```
+- **Syphilis, confirmed** | chapters ['ch1'] → sections ['A50-A64', 'A65-A69'] (170 codes) → A51/A52/A53(47) → 47 cands → **A51.9** (medium)
+- **Syphilis, supported by serology** | chapters ['ch1'] → sections ['A50-A64', 'A65-A69'] (170 codes) → A51/A52/A53(47) → 47 cands → **A51.9** (medium)
+  - gold A53.9 [matched dx: Syphilis, supported by serology]: Ch.1 Certain infectious and parasitic diseases (A00-B99) > Infections with a predominantly sexual mode of transmission (A50-A64) > A53 Other and unspecified syphilis > A53.9 Syphilis, unspecified
+
+### V0090  gold=['R09.81']  pred=['J30.0']
+```
+ביקור מרפאתי. בן 27.
+בימים האחרונים דווח כי תחושת אף סתום בחשיפה לקור ללא אבחנה סופית.
+בדיקות וממצאים: רירית מעט בצקתית.
+הותאם מעקב לפי חומרת הממצאים, ונמסרו סימני אזהרה להערכה חוזרת.
+```
+- **Congestion of nasal mucosa** | chapters ['ch10', 'ch18'] → sections ['J00-J06', 'J30-J39', 'R00-R09'] (160 codes) → J30/J06(9) → 9 cands → **J30.0** (medium)
+- **Edema of nasal mucosa** | chapters ['ch10', 'ch18'] → sections ['J30-J39', 'R50-R69'] (135 codes) → J30/J34(26) → 26 cands → **NONE** (high)
+  - gold R09.81 [matched dx: Congestion of nasal mucosa]: Ch.18 Symptoms, signs and abnormal clinical and laboratory findings, not elsewhere classified (R00-R99) > Symptoms and signs involving the circulatory and respiratory systems (R00-R09) > R09 Other symptoms and signs involving the circulatory and respiratory system > R09.8 Other specified symptoms and signs involving the circulatory and respiratory systems > R09.81 Nasal congestion
